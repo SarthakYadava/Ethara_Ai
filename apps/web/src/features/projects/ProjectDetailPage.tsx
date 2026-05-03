@@ -1,6 +1,7 @@
 import { Plus, UserRoundPlus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
+import { LoadingState } from "../../components/LoadingState";
 import { apiClient } from "../../lib/api-client";
 import type { Project, Task, TaskPriority, TaskStatus, User } from "../../types/api";
 import { useAuth } from "../auth/auth-context";
@@ -23,6 +24,10 @@ export function ProjectDetailPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [memberId, setMemberId] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAddingMember, setIsAddingMember] = useState(false);
+  const [isCreatingTask, setIsCreatingTask] = useState(false);
+  const [updatingTaskId, setUpdatingTaskId] = useState<string | null>(null);
   const [taskForm, setTaskForm] = useState({
     title: "",
     description: "",
@@ -36,15 +41,21 @@ export function ProjectDetailPage() {
       return;
     }
 
-    const [projectResult, taskResult, usersResult] = await Promise.all([
-      apiClient.projects(session.token),
-      apiClient.tasks(session.token, projectId),
-      apiClient.users(session.token)
-    ]);
+    setIsLoading(true);
 
-    setProject(projectResult.projects.find((item) => item.id === projectId) ?? null);
-    setTasks(taskResult.tasks);
-    setUsers(usersResult.users);
+    try {
+      const [projectResult, taskResult, usersResult] = await Promise.all([
+        apiClient.projects(session.token),
+        apiClient.tasks(session.token, projectId),
+        apiClient.users(session.token)
+      ]);
+
+      setProject(projectResult.projects.find((item) => item.id === projectId) ?? null);
+      setTasks(taskResult.tasks);
+      setUsers(usersResult.users);
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   useEffect(() => {
@@ -61,9 +72,15 @@ export function ProjectDetailPage() {
       return;
     }
 
-    await apiClient.addMember(session.token, projectId, memberId);
-    setMemberId("");
-    await loadProject();
+    setIsAddingMember(true);
+
+    try {
+      await apiClient.addMember(session.token, projectId, memberId);
+      setMemberId("");
+      await loadProject();
+    } finally {
+      setIsAddingMember(false);
+    }
   }
 
   async function handleCreateTask(event: React.FormEvent) {
@@ -73,13 +90,19 @@ export function ProjectDetailPage() {
       return;
     }
 
-    await apiClient.createTask(session.token, projectId, {
-      ...taskForm,
-      assigneeId: taskForm.assigneeId || undefined,
-      dueDate: taskForm.dueDate ? new Date(taskForm.dueDate).toISOString() : undefined
-    });
-    setTaskForm({ title: "", description: "", priority: "MEDIUM", assigneeId: "", dueDate: "" });
-    await loadProject();
+    setIsCreatingTask(true);
+
+    try {
+      await apiClient.createTask(session.token, projectId, {
+        ...taskForm,
+        assigneeId: taskForm.assigneeId || undefined,
+        dueDate: taskForm.dueDate ? new Date(taskForm.dueDate).toISOString() : undefined
+      });
+      setTaskForm({ title: "", description: "", priority: "MEDIUM", assigneeId: "", dueDate: "" });
+      await loadProject();
+    } finally {
+      setIsCreatingTask(false);
+    }
   }
 
   async function handleStatusChange(taskId: string, status: TaskStatus) {
@@ -87,8 +110,14 @@ export function ProjectDetailPage() {
       return;
     }
 
-    await apiClient.updateTaskStatus(session.token, taskId, status);
-    await loadProject();
+    setUpdatingTaskId(taskId);
+
+    try {
+      await apiClient.updateTaskStatus(session.token, taskId, status);
+      await loadProject();
+    } finally {
+      setUpdatingTaskId(null);
+    }
   }
 
   return (
@@ -108,30 +137,39 @@ export function ProjectDetailPage() {
               <h2>Status flow</h2>
             </div>
           </div>
-          <div className="board">
-            {statuses.map((status) => (
-              <section className="board-column" key={status}>
-                <h3>{statusLabels[status]}</h3>
-                {tasks
-                  .filter((task) => task.status === status)
-                  .map((task) => (
-                    <article className="task-card" key={task.id}>
-                      <strong>{task.title}</strong>
-                      <p>{task.description ?? "No description"}</p>
-                      <div className="task-meta">
-                        <span className="priority">{task.priority}</span>
-                        <span>{task.assignee?.name ?? "Unassigned"}</span>
-                      </div>
-                      <select value={task.status} onChange={(event) => handleStatusChange(task.id, event.target.value as TaskStatus)}>
-                        {statuses.map((option) => (
-                          <option value={option} key={option}>{statusLabels[option]}</option>
-                        ))}
-                      </select>
-                    </article>
-                  ))}
-              </section>
-            ))}
-          </div>
+          {isLoading ? (
+            <LoadingState label="Loading project board" />
+          ) : (
+            <div className="board">
+              {statuses.map((status) => (
+                <section className="board-column" key={status}>
+                  <h3>{statusLabels[status]}</h3>
+                  {tasks
+                    .filter((task) => task.status === status)
+                    .map((task) => (
+                      <article className="task-card" key={task.id}>
+                        <strong>{task.title}</strong>
+                        <p>{task.description ?? "No description"}</p>
+                        <div className="task-meta">
+                          <span className="priority">{task.priority}</span>
+                          <span>{task.assignee?.name ?? "Unassigned"}</span>
+                        </div>
+                        <select
+                          value={task.status}
+                          disabled={updatingTaskId === task.id}
+                          onChange={(event) => handleStatusChange(task.id, event.target.value as TaskStatus)}
+                        >
+                          {statuses.map((option) => (
+                            <option value={option} key={option}>{statusLabels[option]}</option>
+                          ))}
+                        </select>
+                        {updatingTaskId === task.id && <span className="inline-loading"><span className="loading-spinner small" /> Updating</span>}
+                      </article>
+                    ))}
+                </section>
+              ))}
+            </div>
+          )}
         </article>
 
         <aside className="side-stack">
@@ -156,7 +194,10 @@ export function ProjectDetailPage() {
                 ))}
               </select>
               <input type="date" value={taskForm.dueDate} onChange={(event) => setTaskForm({ ...taskForm, dueDate: event.target.value })} />
-              <button className="primary-button" type="submit">Create task</button>
+              <button className="primary-button" type="submit" disabled={isCreatingTask}>
+                {isCreatingTask && <span className="loading-spinner small" aria-hidden="true" />}
+                {isCreatingTask ? "Creating task" : "Create task"}
+              </button>
             </form>
           )}
 
@@ -181,7 +222,10 @@ export function ProjectDetailPage() {
                     <option value={user.id} key={user.id}>{user.name}</option>
                   ))}
                 </select>
-                <button className="secondary-button" type="submit">Add member</button>
+                <button className="secondary-button" type="submit" disabled={isAddingMember}>
+                  {isAddingMember && <span className="loading-spinner small" aria-hidden="true" />}
+                  {isAddingMember ? "Adding member" : "Add member"}
+                </button>
               </>
             )}
           </form>

@@ -1,5 +1,6 @@
 import { UsersRound } from "lucide-react";
 import { useEffect, useState } from "react";
+import { LoadingState } from "../../components/LoadingState";
 import { apiClient } from "../../lib/api-client";
 import type { User } from "../../types/api";
 import { useAuth } from "../auth/auth-context";
@@ -7,6 +8,7 @@ import { useAuth } from "../auth/auth-context";
 export function TeamPage() {
   const { session } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     async function loadUsers() {
@@ -14,8 +16,14 @@ export function TeamPage() {
         return;
       }
 
-      const result = await apiClient.users(session.token);
-      setUsers(result.users);
+      setIsLoading(true);
+
+      try {
+        const result = await apiClient.users(session.token);
+        setUsers(result.users);
+      } finally {
+        setIsLoading(false);
+      }
     }
 
     loadUsers();
@@ -30,16 +38,20 @@ export function TeamPage() {
         </div>
       </header>
 
-      <section className="team-grid">
-        {users.map((user) => (
-          <article className="team-card" key={user.id}>
-            <UsersRound size={18} />
-            <strong>{user.name}</strong>
-            <span>{user.email}</span>
-            <em>{user.role}</em>
-          </article>
-        ))}
-      </section>
+      {isLoading ? (
+        <LoadingState label="Loading team" />
+      ) : (
+        <section className="team-grid">
+          {users.map((user) => (
+            <article className="team-card" key={user.id}>
+              <UsersRound size={18} />
+              <strong>{user.name}</strong>
+              <span>{user.email}</span>
+              <em>{user.role}</em>
+            </article>
+          ))}
+        </section>
+      )}
     </>
   );
 }

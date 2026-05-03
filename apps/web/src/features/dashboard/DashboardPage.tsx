@@ -1,6 +1,7 @@
 import { AlertTriangle, CheckCircle2, Clock3, KanbanSquare, UsersRound } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { LoadingState } from "../../components/LoadingState";
 import { apiClient } from "../../lib/api-client";
 import type { DashboardSummary, Project } from "../../types/api";
 import { useAuth } from "../auth/auth-context";
@@ -11,22 +12,40 @@ export function DashboardPage() {
   const { session } = useAuth();
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+
     async function loadDashboard() {
       if (!session) {
         return;
       }
 
-      const [summaryResult, projectResult] = await Promise.all([
-        apiClient.dashboard(session.token),
-        apiClient.projects(session.token)
-      ]);
-      setSummary(summaryResult.summary);
-      setProjects(projectResult.projects);
+      setIsLoading(true);
+
+      try {
+        const [summaryResult, projectResult] = await Promise.all([
+          apiClient.dashboard(session.token),
+          apiClient.projects(session.token)
+        ]);
+
+        if (isMounted) {
+          setSummary(summaryResult.summary);
+          setProjects(projectResult.projects);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
     }
 
     loadDashboard();
+
+    return () => {
+      isMounted = false;
+    };
   }, [session]);
 
   const metrics = [
@@ -68,8 +87,11 @@ export function DashboardPage() {
             </div>
             <Link className="text-button" to="/projects">View all</Link>
           </div>
-          <div className="project-list">
-            {projects.map((project) => (
+          {isLoading ? (
+            <LoadingState label="Loading projects" />
+          ) : (
+            <div className="project-list">
+              {projects.map((project) => (
               <Link className="project-row" to={`/projects/${project.id}`} key={project.id}>
                 <div>
                   <strong>{project.name}</strong>
@@ -77,8 +99,9 @@ export function DashboardPage() {
                 </div>
                 <span>{project._count.tasks} tasks</span>
               </Link>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </article>
 
         <article className="panel workload-panel">
@@ -89,13 +112,17 @@ export function DashboardPage() {
             </div>
             <UsersRound size={18} />
           </div>
-          {(summary?.workload ?? []).map((item) => (
-            <div className="load-row" key={item.assigneeId}>
-              <span>{item.name}</span>
-              <div><i style={{ width: `${Math.min(item.count * 12, 100)}%` }} /></div>
-              <strong>{item.count}</strong>
-            </div>
-          ))}
+          {isLoading ? (
+            <LoadingState label="Loading workload" />
+          ) : (
+            (summary?.workload ?? []).map((item) => (
+              <div className="load-row" key={item.assigneeId}>
+                <span>{item.name}</span>
+                <div><i style={{ width: `${Math.min(item.count * 12, 100)}%` }} /></div>
+                <strong>{item.count}</strong>
+              </div>
+            ))
+          )}
         </article>
       </section>
     </>

@@ -1,6 +1,7 @@
 import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { LoadingState } from "../../components/LoadingState";
 import { apiClient } from "../../lib/api-client";
 import type { Project } from "../../types/api";
 import { useAuth } from "../auth/auth-context";
@@ -9,14 +10,22 @@ export function ProjectsPage() {
   const { session } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
   const [form, setForm] = useState({ name: "", description: "" });
+  const [isLoading, setIsLoading] = useState(true);
+  const [isCreating, setIsCreating] = useState(false);
 
   async function loadProjects() {
     if (!session) {
       return;
     }
 
-    const result = await apiClient.projects(session.token);
-    setProjects(result.projects);
+    setIsLoading(true);
+
+    try {
+      const result = await apiClient.projects(session.token);
+      setProjects(result.projects);
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   useEffect(() => {
@@ -30,9 +39,15 @@ export function ProjectsPage() {
       return;
     }
 
-    await apiClient.createProject(session.token, form);
-    setForm({ name: "", description: "" });
-    await loadProjects();
+    setIsCreating(true);
+
+    try {
+      await apiClient.createProject(session.token, form);
+      setForm({ name: "", description: "" });
+      await loadProjects();
+    } finally {
+      setIsCreating(false);
+    }
   }
 
   return (
@@ -57,25 +72,29 @@ export function ProjectsPage() {
             value={form.description}
             onChange={(event) => setForm({ ...form, description: event.target.value })}
           />
-          <button className="primary-button compact-button" type="submit">
-            <Plus size={16} />
-            Create
+          <button className="primary-button compact-button" type="submit" disabled={isCreating}>
+            {isCreating ? <span className="loading-spinner small" aria-hidden="true" /> : <Plus size={16} />}
+            {isCreating ? "Creating" : "Create"}
           </button>
         </form>
       )}
 
-      <section className="project-grid">
-        {projects.map((project) => (
-          <Link className="project-card" to={`/projects/${project.id}`} key={project.id}>
-            <strong>{project.name}</strong>
-            <p>{project.description ?? "No description yet"}</p>
-            <div>
-              <span>{project._count.tasks} tasks</span>
-              <span>{project._count.members} members</span>
-            </div>
-          </Link>
-        ))}
-      </section>
+      {isLoading ? (
+        <LoadingState label="Loading projects" />
+      ) : (
+        <section className="project-grid">
+          {projects.map((project) => (
+            <Link className="project-card" to={`/projects/${project.id}`} key={project.id}>
+              <strong>{project.name}</strong>
+              <p>{project.description ?? "No description yet"}</p>
+              <div>
+                <span>{project._count.tasks} tasks</span>
+                <span>{project._count.members} members</span>
+              </div>
+            </Link>
+          ))}
+        </section>
+      )}
     </>
   );
 }
