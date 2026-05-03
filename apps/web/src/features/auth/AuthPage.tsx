@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { CheckCircle2, LockKeyhole, UserPlus } from "lucide-react";
 import { Navigate } from "react-router-dom";
+import { EtharaBoardLogo } from "../../components/EtharaBoardLogo";
 import { useAuth } from "./auth-context";
 
 type Mode = "login" | "signup";
@@ -38,7 +39,7 @@ export function AuthPage() {
     <main className="auth-page">
       <section className="auth-preview">
         <div className="brand-row">
-          <span className="brand-mark">TT</span>
+          <EtharaBoardLogo />
           <strong>EtharaBoard</strong>
         </div>
         <div>
@@ -48,8 +49,8 @@ export function AuthPage() {
         <div className="preview-stack">
           <div className="preview-card">
             <CheckCircle2 size={18} />
-            <span>68% complete</span>
-            <strong>Launch Command Center</strong>
+            <span>68% task completion</span>
+            <strong>Launch Command Center progress</strong>
           </div>
           <div className="preview-card warning">
             <LockKeyhole size={18} />

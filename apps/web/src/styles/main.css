@@ -175,6 +175,28 @@ select:disabled {
   font-weight: 900;
 }
 
+.brand-mark svg {
+  width: 31px;
+  height: 31px;
+}
+
+.logo-board {
+  fill: #172026;
+}
+
+.logo-line,
+.logo-check {
+  fill: none;
+  stroke: #f4b860;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.4;
+}
+
+.logo-check {
+  stroke: #ffffff;
+}
+
 .preview-stack {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

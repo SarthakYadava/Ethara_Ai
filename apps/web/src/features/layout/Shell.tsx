@@ -1,5 +1,6 @@
 import { LayoutDashboard, LogOut, PanelsTopLeft, UsersRound } from "lucide-react";
 import { NavLink, Outlet } from "react-router-dom";
+import { EtharaBoardLogo } from "../../components/EtharaBoardLogo";
 import { useAuth } from "../auth/auth-context";
 
 export function Shell() {
@@ -9,7 +10,7 @@ export function Shell() {
     <main className="app-shell">
       <aside className="sidebar">
         <div className="brand-row compact">
-          <span className="brand-mark">TT</span>
+          <EtharaBoardLogo />
           <strong>EtharaBoard</strong>
         </div>
         <nav>
