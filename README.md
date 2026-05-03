@@ -2,6 +2,11 @@
 
 A full-stack team task manager where admins create projects, manage teams, assign tasks, and track project health while members focus on assigned work and status updates.
 
+## Submission
+
+- GitHub repo: https://github.com/SarthakYadava/Ethara_Ai
+- Live URL: Add the Railway production URL here after deployment.
+
 ## Features
 
 - Signup and login with JWT authentication
@@ -64,8 +69,16 @@ If the database is empty and seed data is not used, the first signup becomes an 
 4. Railway uses `npm run build` and `npm start`.
 5. `npm start` runs `prisma migrate deploy` before starting the API server.
 
+If deploying from the CLI:
+
+```bash
+npx @railway/cli login
+npx @railway/cli link
+npx @railway/cli up
+```
+
 For demo data on Railway, run:
 
 ```bash
-npm run db:seed
+npx @railway/cli run npm run db:seed
 ```
