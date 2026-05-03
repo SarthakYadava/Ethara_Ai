@@ -13,7 +13,15 @@ const __dirname = path.dirname(__filename);
 
 export const app = express();
 
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        "img-src": ["'self'", "data:", "https://images.unsplash.com"]
+      }
+    }
+  })
+);
 app.use(cors({ origin: env.CLIENT_URL, credentials: true }));
 app.use(express.json());
 app.use(morgan(env.NODE_ENV === "production" ? "combined" : "dev"));
@@ -23,7 +31,7 @@ app.use("/api", apiRouter);
 if (env.NODE_ENV === "production") {
   const webDist = path.resolve(__dirname, "../../../web/dist");
   app.use(express.static(webDist));
-  app.get("*", (_req, res) => {
+  app.get("/{*splat}", (_req, res) => {
     res.sendFile(path.join(webDist, "index.html"));
   });
 }
