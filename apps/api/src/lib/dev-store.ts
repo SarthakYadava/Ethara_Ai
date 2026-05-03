@@ -32,7 +32,7 @@ type DemoUser = {
 
 const admin = {
   id: "demo-admin",
-  name: "Aarav Admin",
+  name: "Sarthak Admin",
   email: "admin@demo.com",
   role: UserRole.ADMIN,
   password: "Admin@123",
