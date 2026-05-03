@@ -5,7 +5,7 @@ EtharaBoard is a full-stack team task manager where admins create projects, mana
 ## Submission
 
 - GitHub repo: https://github.com/SarthakYadava/Ethara_Ai
-- Live URL: Add the Railway production URL here after deployment.
+- Live URL: https://etharaai-production-2259.up.railway.app
 
 ## Features
 
