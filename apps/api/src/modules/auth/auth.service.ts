@@ -94,6 +94,34 @@ export async function login(input: LoginInput) {
   }
 }
 
-export function getCurrentUser(user: AuthUser) {
-  return { user };
+export async function getCurrentUser(user: AuthUser) {
+  try {
+    const freshUser = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true
+      }
+    });
+
+    if (!freshUser) {
+      throw new AppError(404, "User not found");
+    }
+
+    return { user: toAuthUser(freshUser) };
+  } catch (error) {
+    if (!devStore.isUnavailable(error)) {
+      throw error;
+    }
+
+    const freshUser = devStore.findUserById(user.id);
+
+    if (!freshUser) {
+      throw new AppError(404, "User not found");
+    }
+
+    return { user: devStore.authUser(freshUser) };
+  }
 }

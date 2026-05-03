@@ -157,6 +157,9 @@ export const devStore = {
   findUserByEmail(email: string) {
     return users.find((user) => user.email === email) ?? null;
   },
+  findUserById(userId: string) {
+    return users.find((user) => user.id === userId) ?? null;
+  },
   createUser(input: { name: string; email: string; password: string }) {
     const user = {
       id: `demo-user-${Date.now()}`,
