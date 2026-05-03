@@ -1,6 +1,13 @@
 import { TaskPriority, TaskStatus } from "@prisma/client";
 import { z } from "zod";
 
+const optionalDescriptionSchema = z
+  .string()
+  .trim()
+  .max(1000, "Description must be 1000 characters or less")
+  .optional()
+  .transform((value) => value || undefined);
+
 export const taskIdParamSchema = z.object({
   taskId: z.string().min(1)
 });
@@ -17,8 +24,8 @@ const dueDateSchema = z
   .transform((value) => (value ? new Date(value) : null));
 
 export const createTaskSchema = z.object({
-  title: z.string().min(2).max(160),
-  description: z.string().max(1000).optional(),
+  title: z.string().trim().min(2, "Task title must be at least 2 characters").max(160),
+  description: optionalDescriptionSchema,
   status: z.nativeEnum(TaskStatus).optional(),
   priority: z.nativeEnum(TaskPriority).optional(),
   dueDate: dueDateSchema,

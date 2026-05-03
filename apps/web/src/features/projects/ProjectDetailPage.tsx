@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { LoadingState } from "../../components/LoadingState";
 import { apiClient } from "../../lib/api-client";
+import { validateTaskForm } from "../../lib/validation";
 import type { Project, Task, TaskPriority, TaskStatus, User } from "../../types/api";
 import { useAuth } from "../auth/auth-context";
 
@@ -28,6 +29,7 @@ export function ProjectDetailPage() {
   const [isAddingMember, setIsAddingMember] = useState(false);
   const [isCreatingTask, setIsCreatingTask] = useState(false);
   const [updatingTaskId, setUpdatingTaskId] = useState<string | null>(null);
+  const [error, setError] = useState("");
   const [taskForm, setTaskForm] = useState({
     title: "",
     description: "",
@@ -53,6 +55,9 @@ export function ProjectDetailPage() {
       setProject(projectResult.projects.find((item) => item.id === projectId) ?? null);
       setTasks(taskResult.tasks);
       setUsers(usersResult.users);
+      setError("");
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "Unable to load project.");
     } finally {
       setIsLoading(false);
     }
@@ -69,6 +74,7 @@ export function ProjectDetailPage() {
     event.preventDefault();
 
     if (!session || !memberId) {
+      setError("Choose a user before adding a member.");
       return;
     }
 
@@ -77,7 +83,10 @@ export function ProjectDetailPage() {
     try {
       await apiClient.addMember(session.token, projectId, memberId);
       setMemberId("");
+      setError("");
       await loadProject();
+    } catch (memberError) {
+      setError(memberError instanceof Error ? memberError.message : "Unable to add member.");
     } finally {
       setIsAddingMember(false);
     }
@@ -90,6 +99,13 @@ export function ProjectDetailPage() {
       return;
     }
 
+    const validationError = validateTaskForm(taskForm);
+
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
     setIsCreatingTask(true);
 
     try {
@@ -99,7 +115,10 @@ export function ProjectDetailPage() {
         dueDate: taskForm.dueDate ? new Date(taskForm.dueDate).toISOString() : undefined
       });
       setTaskForm({ title: "", description: "", priority: "MEDIUM", assigneeId: "", dueDate: "" });
+      setError("");
       await loadProject();
+    } catch (taskError) {
+      setError(taskError instanceof Error ? taskError.message : "Unable to create task.");
     } finally {
       setIsCreatingTask(false);
     }
@@ -114,7 +133,10 @@ export function ProjectDetailPage() {
 
     try {
       await apiClient.updateTaskStatus(session.token, taskId, status);
+      setError("");
       await loadProject();
+    } catch (statusError) {
+      setError(statusError instanceof Error ? statusError.message : "Unable to update task status.");
     } finally {
       setUpdatingTaskId(null);
     }
@@ -173,6 +195,7 @@ export function ProjectDetailPage() {
         </article>
 
         <aside className="side-stack">
+          {error && <p className="form-error panel-message">{error}</p>}
           {session?.user.role === "ADMIN" && (
             <form className="panel stack-form" onSubmit={handleCreateTask}>
               <div className="panel-heading">
@@ -182,8 +205,20 @@ export function ProjectDetailPage() {
                 </div>
                 <Plus size={18} />
               </div>
-              <input placeholder="Title" value={taskForm.title} onChange={(event) => setTaskForm({ ...taskForm, title: event.target.value })} required />
-              <textarea placeholder="Description" value={taskForm.description} onChange={(event) => setTaskForm({ ...taskForm, description: event.target.value })} />
+              <input
+                placeholder="Title"
+                value={taskForm.title}
+                onChange={(event) => setTaskForm({ ...taskForm, title: event.target.value })}
+                minLength={2}
+                maxLength={160}
+                required
+              />
+              <textarea
+                placeholder="Description"
+                value={taskForm.description}
+                onChange={(event) => setTaskForm({ ...taskForm, description: event.target.value })}
+                maxLength={1000}
+              />
               <select value={taskForm.priority} onChange={(event) => setTaskForm({ ...taskForm, priority: event.target.value as TaskPriority })}>
                 {priorities.map((priority) => <option value={priority} key={priority}>{priority}</option>)}
               </select>

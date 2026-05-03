@@ -2,6 +2,7 @@ import { useState } from "react";
 import { CheckCircle2, LockKeyhole, UserPlus } from "lucide-react";
 import { Navigate } from "react-router-dom";
 import { EtharaBoardLogo } from "../../components/EtharaBoardLogo";
+import { validateAuthForm } from "../../lib/validation";
 import { useAuth } from "./auth-context";
 
 type Mode = "login" | "signup";
@@ -20,13 +21,21 @@ export function AuthPage() {
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     setError("");
+
+    const validationError = validateAuthForm({ mode, ...form });
+
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
       if (mode === "login") {
-        await login({ email: form.email, password: form.password });
+        await login({ email: form.email.trim(), password: form.password });
       } else {
-        await signup(form);
+        await signup({ ...form, name: form.name.trim(), email: form.email.trim() });
       }
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Authentication failed");
@@ -82,7 +91,13 @@ export function AuthPage() {
           {mode === "signup" && (
             <label>
               Name
-              <input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} required />
+              <input
+                value={form.name}
+                onChange={(event) => setForm({ ...form, name: event.target.value })}
+                minLength={2}
+                maxLength={80}
+                required
+              />
             </label>
           )}
           <label>
@@ -100,8 +115,10 @@ export function AuthPage() {
               type="password"
               value={form.password}
               onChange={(event) => setForm({ ...form, password: event.target.value })}
+              minLength={mode === "signup" ? 8 : undefined}
               required
             />
+            {mode === "signup" && <span className="form-help">Use 8+ characters with uppercase, lowercase, and a number.</span>}
           </label>
 
           {error && <p className="form-error">{error}</p>}
