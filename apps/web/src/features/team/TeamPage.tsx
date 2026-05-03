@@ -39,7 +39,7 @@ export function TeamPage() {
       </header>
 
       {isLoading ? (
-        <LoadingState label="Loading team" />
+        <LoadingState label="Loading team" size="page" />
       ) : (
         <section className="team-grid">
           {users.map((user) => (

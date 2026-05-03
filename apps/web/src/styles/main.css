@@ -56,6 +56,10 @@ select:disabled {
   text-align: center;
 }
 
+.loading-state-page {
+  min-height: calc(100vh - 300px);
+}
+
 .loading-spinner {
   width: 30px;
   height: 30px;

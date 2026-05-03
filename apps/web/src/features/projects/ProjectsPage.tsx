@@ -80,7 +80,7 @@ export function ProjectsPage() {
       )}
 
       {isLoading ? (
-        <LoadingState label="Loading projects" />
+        <LoadingState label="Loading projects" size="page" />
       ) : (
         <section className="project-grid">
           {projects.map((project) => (
