@@ -39,7 +39,7 @@ export function AuthPage() {
       <section className="auth-preview">
         <div className="brand-row">
           <span className="brand-mark">TT</span>
-          <strong>TaskTrace</strong>
+          <strong>EtharaBoard</strong>
         </div>
         <div>
           <p className="eyebrow">Team command center</p>

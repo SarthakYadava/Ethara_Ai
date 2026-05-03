@@ -1,6 +1,6 @@
-# Team Task Manager
+# EtharaBoard
 
-A full-stack team task manager where admins create projects, manage teams, assign tasks, and track project health while members focus on assigned work and status updates.
+EtharaBoard is a full-stack team task manager where admins create projects, manage teams, assign tasks, and track project health while members focus on assigned work and status updates.
 
 ## Submission
 

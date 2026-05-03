@@ -1,8 +1,8 @@
 {
-  "name": "team-task-manager",
+  "name": "etharaboard",
   "version": "1.0.0",
   "private": true,
-  "description": "Role-aware team task manager built with React, Express, PostgreSQL, and Prisma.",
+  "description": "EtharaBoard is a role-aware team task manager built with React, Express, PostgreSQL, and Prisma.",
   "workspaces": [
     "apps/api",
     "apps/web"

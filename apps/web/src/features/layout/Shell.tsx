@@ -10,7 +10,7 @@ export function Shell() {
       <aside className="sidebar">
         <div className="brand-row compact">
           <span className="brand-mark">TT</span>
-          <strong>TaskTrace</strong>
+          <strong>EtharaBoard</strong>
         </div>
         <nav>
           <NavLink to="/" end>

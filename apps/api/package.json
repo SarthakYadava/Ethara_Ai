@@ -1,5 +1,5 @@
 {
-  "name": "@team-task-manager/api",
+  "name": "@etharaboard/api",
   "version": "1.0.0",
   "private": true,
   "type": "module",

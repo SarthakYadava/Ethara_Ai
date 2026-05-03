@@ -1,6 +1,6 @@
 import type { Session } from "../types/api";
 
-const SESSION_KEY = "team-task-manager-session";
+const SESSION_KEY = "etharaboard-session";
 
 export function readStoredSession(): Session | null {
   const raw = localStorage.getItem(SESSION_KEY);
