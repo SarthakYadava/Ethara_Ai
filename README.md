@@ -1,13 +1,23 @@
 # Team Task Manager
 
-A full-stack team task manager with authentication, project management, task assignment, status tracking, and role-based access.
+A full-stack team task manager where admins create projects, manage teams, assign tasks, and track project health while members focus on assigned work and status updates.
+
+## Features
+
+- Signup and login with JWT authentication
+- Admin/member role-based access control
+- Project creation and team membership management
+- Task creation, assignment, priority, due dates, and status tracking
+- Dashboard metrics for completion, overdue tasks, blocked work, and workload
+- Modular REST API and feature-based React frontend
 
 ## Stack
 
-- React + Vite
+- React + Vite + React Router
 - Node.js + Express
 - PostgreSQL + Prisma
-- JWT authentication
+- Zod validation
+- Railway deployment
 
 ## Local Setup
 
@@ -20,10 +30,42 @@ npm run db:seed
 npm run dev
 ```
 
+The API runs on `http://localhost:4000` and the web app runs on `http://localhost:5173`.
+
 ## Demo Accounts
 
-Seed data will create demo admin and member accounts once the database is configured.
+After running the seed command:
 
-## Deployment
+- Admin: `admin@demo.com` / `Admin@123`
+- Member: `member@demo.com` / `Member@123`
 
-The app is designed for Railway with PostgreSQL. Set the environment variables from `.env.example`, run Prisma migrations, and start the production server with `npm start`.
+If the database is empty and seed data is not used, the first signup becomes an admin.
+
+## API Overview
+
+- `POST /api/auth/signup`
+- `POST /api/auth/login`
+- `GET /api/auth/me`
+- `GET /api/users`
+- `GET /api/projects`
+- `POST /api/projects`
+- `POST /api/projects/:projectId/members`
+- `GET /api/projects/:projectId/tasks`
+- `POST /api/projects/:projectId/tasks`
+- `PATCH /api/tasks/:taskId/status`
+- `GET /api/dashboard`
+- `GET /api/dashboard/projects/:projectId`
+
+## Railway Deployment
+
+1. Create a Railway project from this GitHub repo.
+2. Add a Railway PostgreSQL database.
+3. Set `DATABASE_URL`, `JWT_SECRET`, `CLIENT_URL`, and `PORT`.
+4. Railway uses `npm run build` and `npm start`.
+5. `npm start` runs `prisma migrate deploy` before starting the API server.
+
+For demo data on Railway, run:
+
+```bash
+npm run db:seed
+```

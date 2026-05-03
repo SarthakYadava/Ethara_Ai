@@ -10,11 +10,12 @@
   "scripts": {
     "dev": "concurrently \"npm run dev --workspace apps/api\" \"npm run dev --workspace apps/web\"",
     "build": "npm run build --workspace apps/web && npm run build --workspace apps/api",
-    "start": "npm run start --workspace apps/api",
+    "start": "npm run db:deploy && npm run start --workspace apps/api",
     "lint": "npm run lint --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "db:generate": "npm run prisma:generate --workspace apps/api",
     "db:migrate": "npm run prisma:migrate --workspace apps/api",
+    "db:deploy": "npm run prisma:deploy --workspace apps/api",
     "db:seed": "npm run prisma:seed --workspace apps/api"
   },
   "devDependencies": {
