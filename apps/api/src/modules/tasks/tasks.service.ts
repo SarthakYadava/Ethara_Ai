@@ -1,4 +1,5 @@
 import { TaskStatus, UserRole } from "@prisma/client";
+import { devStore } from "../../lib/dev-store.js";
 import { prisma } from "../../lib/prisma.js";
 import { AppError } from "../../middleware/error-handler.js";
 import type { AuthUser } from "../../types/auth.js";
@@ -44,32 +45,48 @@ async function ensureAssigneeIsMember(projectId: string, assigneeId?: string | n
 }
 
 export async function listTasks(user: AuthUser, projectId: string) {
-  await ensureProjectAccess(user, projectId);
+  try {
+    await ensureProjectAccess(user, projectId);
 
-  return prisma.task.findMany({
-    where: { projectId },
-    include: taskInclude,
-    orderBy: [{ status: "asc" }, { dueDate: "asc" }, { createdAt: "desc" }]
-  });
+    return prisma.task.findMany({
+      where: { projectId },
+      include: taskInclude,
+      orderBy: [{ status: "asc" }, { dueDate: "asc" }, { createdAt: "desc" }]
+    });
+  } catch (error) {
+    if (!devStore.isUnavailable(error)) {
+      throw error;
+    }
+
+    return devStore.listTasks(projectId);
+  }
 }
 
 export async function createTask(user: AuthUser, projectId: string, input: CreateTaskInput) {
-  await ensureProjectAccess(user, projectId);
-  await ensureAssigneeIsMember(projectId, input.assigneeId);
+  try {
+    await ensureProjectAccess(user, projectId);
+    await ensureAssigneeIsMember(projectId, input.assigneeId);
 
-  return prisma.task.create({
-    data: {
-      title: input.title,
-      description: input.description,
-      status: input.status,
-      priority: input.priority,
-      dueDate: input.dueDate,
-      assigneeId: input.assigneeId,
-      creatorId: user.id,
-      projectId
-    },
-    include: taskInclude
-  });
+    return prisma.task.create({
+      data: {
+        title: input.title,
+        description: input.description,
+        status: input.status,
+        priority: input.priority,
+        dueDate: input.dueDate,
+        assigneeId: input.assigneeId,
+        creatorId: user.id,
+        projectId
+      },
+      include: taskInclude
+    });
+  } catch (error) {
+    if (!devStore.isUnavailable(error)) {
+      throw error;
+    }
+
+    return devStore.createTask(projectId, user.id, input);
+  }
 }
 
 export async function updateTask(user: AuthUser, taskId: string, input: UpdateTaskInput) {
@@ -102,7 +119,21 @@ export async function updateTask(user: AuthUser, taskId: string, input: UpdateTa
 }
 
 export async function updateTaskStatus(user: AuthUser, taskId: string, input: StatusUpdateInput) {
-  return updateTask(user, taskId, { status: input.status });
+  try {
+    return await updateTask(user, taskId, { status: input.status });
+  } catch (error) {
+    if (!devStore.isUnavailable(error)) {
+      throw error;
+    }
+
+    const task = devStore.updateTaskStatus(taskId, input.status);
+
+    if (!task) {
+      throw new AppError(404, "Task not found");
+    }
+
+    return task;
+  }
 }
 
 export async function deleteTask(user: AuthUser, taskId: string) {

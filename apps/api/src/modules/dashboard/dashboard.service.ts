@@ -1,4 +1,5 @@
 import { TaskStatus, UserRole } from "@prisma/client";
+import { devStore } from "../../lib/dev-store.js";
 import { prisma } from "../../lib/prisma.js";
 import type { AuthUser } from "../../types/auth.js";
 import { ensureProjectAccess } from "../projects/project-access.js";
@@ -47,47 +48,63 @@ function summarizeTasks(tasks: Array<{ status: TaskStatus; dueDate: Date | null;
 }
 
 export async function getWorkspaceSummary(user: AuthUser) {
-  const tasks = await prisma.task.findMany({
-    where:
-      user.role === UserRole.ADMIN
-        ? undefined
-        : {
-            OR: [
-              { assigneeId: user.id },
-              {
-                project: {
-                  members: {
-                    some: { userId: user.id }
+  try {
+    const tasks = await prisma.task.findMany({
+      where:
+        user.role === UserRole.ADMIN
+          ? undefined
+          : {
+              OR: [
+                { assigneeId: user.id },
+                {
+                  project: {
+                    members: {
+                      some: { userId: user.id }
+                    }
                   }
                 }
-              }
-            ]
-          },
-    include: {
-      assignee: {
-        select: {
-          name: true
+              ]
+            },
+      include: {
+        assignee: {
+          select: {
+            name: true
+          }
         }
       }
-    }
-  });
+    });
 
-  return summarizeTasks(tasks);
+    return summarizeTasks(tasks);
+  } catch (error) {
+    if (!devStore.isUnavailable(error)) {
+      throw error;
+    }
+
+    return summarizeTasks(devStore.allTasks());
+  }
 }
 
 export async function getProjectSummary(user: AuthUser, projectId: string) {
-  await ensureProjectAccess(user, projectId);
+  try {
+    await ensureProjectAccess(user, projectId);
 
-  const tasks = await prisma.task.findMany({
-    where: { projectId },
-    include: {
-      assignee: {
-        select: {
-          name: true
+    const tasks = await prisma.task.findMany({
+      where: { projectId },
+      include: {
+        assignee: {
+          select: {
+            name: true
+          }
         }
       }
-    }
-  });
+    });
 
-  return summarizeTasks(tasks);
+    return summarizeTasks(tasks);
+  } catch (error) {
+    if (!devStore.isUnavailable(error)) {
+      throw error;
+    }
+
+    return summarizeTasks(devStore.projectTasks(projectId));
+  }
 }
